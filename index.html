@@ -3,439 +3,441 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>今天吃了啥 · 营养查询</title>
+<title>锡膏 / 胶水 回温计算器</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    margin: 0; padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
-    background: #f5f6f8; color: #222;
-  }
-  header {
-    background: linear-gradient(135deg, #2e7d5b, #4caf7d);
-    color: #fff; padding: 18px 16px 14px;
-    position: sticky; top: 0; z-index: 10;
-    box-shadow: 0 2px 8px rgba(0,0,0,.12);
-  }
-  header h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: .5px; }
-  header p { margin: 4px 0 0; font-size: 12px; opacity: .85; }
-  header .hd { display: flex; align-items: center; gap: 11px; }
-  header .av {
-    width: 46px; height: 46px; border-radius: 50%; object-fit: cover;
-    border: 2px solid rgba(255,255,255,.75); box-shadow: 0 1px 4px rgba(0,0,0,.15);
-  }
-  header .hd-txt h1 { font-size: 18px; }
-  header .hd-txt p { font-size: 12px; }
-
-  .search-wrap { padding: 12px 12px 0; }
-  #search {
-    width: 100%; padding: 11px 14px; font-size: 15px;
-    border: 1px solid #dfe3e6; border-radius: 10px; outline: none;
-    background: #fff;
-  }
-  #search:focus { border-color: #4caf7d; box-shadow: 0 0 0 3px rgba(76,175,125,.15); }
-  .cats { display: flex; gap: 8px; overflow-x: auto; padding: 10px 12px 4px; scrollbar-width: none; }
-  .cats::-webkit-scrollbar { display: none; }
-  .cat {
-    flex: 0 0 auto; padding: 6px 14px; border-radius: 16px;
-    background: #fff; border: 1px solid #e3e6e8; font-size: 13px; color: #555;
-    cursor: pointer; user-select: none;
-  }
-  .cat.active { background: #2e7d5b; color: #fff; border-color: #2e7d5b; }
-  main { display: grid; grid-template-columns: 1fr 340px; gap: 14px; padding: 10px 12px 30px; }
-  @media (max-width: 820px) {
-    main { grid-template-columns: 1fr; }
-    #plate { position: fixed; left: 0; right: 0; bottom: 0; max-height: 46vh; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,.15); z-index: 20; }
-    body { padding-bottom: 46vh; }
-    #plate.collapsed { max-height: 56px; overflow: hidden; }
-  }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .food {
-    background: #fff; border-radius: 12px; padding: 12px; cursor: pointer;
-    border: 1px solid #eceff1; transition: .15s; position: relative;
-  }
-  .food:hover { border-color: #4caf7d; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.06); }
-  .food .name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
-  .food .alias { font-size: 11px; color: #999; min-height: 14px; margin-bottom: 6px; }
-  .food .kcal { font-size: 20px; font-weight: 700; color: #2e7d5b; }
-  .food .kcal span { font-size: 11px; font-weight: 400; color: #888; margin-left: 2px; }
-  .food .tag { position: absolute; top: 10px; right: 10px; font-size: 10px; color: #aaa; }
-  .photo-card {
-    background: #fff; border: 1px solid #eceff1; border-radius: 12px;
-    padding: 12px; margin-bottom: 12px;
-  }
-  .ph-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .ph-title { font-size: 14px; font-weight: 600; flex: 1; }
-  .ph-btn {
-    font-size: 13px; color: #2e7d5b; background: #e8f5ee;
-    padding: 6px 12px; border-radius: 8px; cursor: pointer; user-select: none;
-  }
-  .ph-btn:hover { background: #d6eddf; }
-  .ph-empty { font-size: 13px; color: #aaa; padding: 8px 0; }
-  .ph-img-wrap { position: relative; }
-  .ph-img-wrap img { width: 100%; max-height: 260px; object-fit: cover; border-radius: 10px; display: block; }
-  .ph-del {
-    position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.55);
-    color: #fff; border: none; border-radius: 14px; padding: 4px 10px;
-    font-size: 12px; cursor: pointer;
-  }
-  .ph-tip { font-size: 11px; color: #999; margin-top: 6px; }
-  .empty { padding: 40px 10px; text-align: center; color: #999; font-size: 14px; }
-  .disclaimer-bar {
-    background: #fff4e0;
-    border-left: 5px solid #e08b2d;
-    border-bottom: 1px solid #f3dfbb;
-    color: #8a5a1a;
-    font-size: 13.5px;
-    padding: 11px 16px;
-    line-height: 1.5;
-  }
-  .disclaimer-bar b { color: #d9722a; margin-right: 2px; }
-  .disclaimer-bar .no-commercial { color: #d92f2f; font-weight: 700; }
-  #plate {
-    background: #fff; border-radius: 14px; padding: 14px; height: fit-content;
-    border: 1px solid #eceff1; position: sticky; top: 96px;
-  }
-  #plate h2 { margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
-  #plate h2 .clear { font-size: 12px; color: #999; cursor: pointer; font-weight: 400; }
-  .pitem { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px dashed #f0f0f0; font-size: 14px; }
-  .pitem .pn { flex: 1; cursor: pointer; }
-  .pdetail { font-size: 12px; color: #667; background: #f9fbfa; border-radius: 8px; padding: 6px 8px; margin: -2px 0 6px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
-  .pdetail b { color: #2e7d5b; font-weight: 600; }
-  .pitem .pk { color: #2e7d5b; font-weight: 600; font-size: 13px; }
-  .stepper { display: flex; align-items: center; gap: 4px; }
-  .stepper button {
-    width: 22px; height: 22px; border-radius: 50%; border: 1px solid #e0e0e0;
-    background: #fafafa; cursor: pointer; font-size: 14px; line-height: 1; color: #666;
-  }
-  .stepper span { min-width: 18px; text-align: center; font-size: 12px; }
-  .pitem .del { color: #ccc; cursor: pointer; font-size: 16px; line-height: 1; }
-  .total { margin-top: 10px; background: #f7faf8; border-radius: 10px; padding: 10px; }
-  .total .row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
-  .total .row b { color: #2e7d5b; }
-  .note { font-size: 11px; color: #999; margin-top: 8px; line-height: 1.5; }
-  .detail-mask {
-    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 30;
-    display: none; align-items: center; justify-content: center; padding: 20px;
-  }
-  .detail-mask.show { display: flex; }
-  .detail {
-    background: #fff; border-radius: 16px; max-width: 420px; width: 100%;
-    max-height: 80vh; overflow: auto; padding: 20px;
-  }
-  .detail h3 { margin: 0 0 2px; font-size: 18px; }
-  .detail .sub { color: #888; font-size: 12px; margin-bottom: 14px; }
-  .nut { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f2f2f2; font-size: 14px; }
-  .nut b { color: #2e7d5b; }
-  .dbtns { display: flex; gap: 10px; margin-top: 16px; }
-  .add-btn {
-    flex: 1; padding: 11px; border: none; border-radius: 10px;
-    background: #2e7d5b; color: #fff; font-size: 15px; cursor: pointer;
-  }
-  .close {
-    flex: 0 0 90px; padding: 11px; border: 1px solid #e0e0e0; border-radius: 10px;
-    background: #fafafa; color: #666; font-size: 15px; cursor: pointer;
-  }
-  .food .plus {
-    position: absolute; right: 8px; bottom: 8px;
-    width: 28px; height: 28px; border-radius: 50%;
-    border: none; background: #e8f5ee; color: #2e7d5b;
-    font-size: 18px; line-height: 1; cursor: pointer;
-  }
-  .food .plus:hover { background: #2e7d5b; color: #fff; }
+  body { margin:0; padding:0 0 30px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; background:#f5f6f8; color:#222; }
+  header { background:linear-gradient(135deg,#2e7d5b,#4caf7d); color:#fff; padding:18px 16px 16px; position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+  header h1 { margin:0; font-size:19px; font-weight:600; }
+  header p { margin:4px 0 0; font-size:12px; opacity:.85; }
+  .disclaimer-bar { background:#fff4e0; border-left:5px solid #e08b2d; border-bottom:1px solid #f3dfbb; color:#8a5a1a; font-size:13px; padding:10px 16px; line-height:1.5; }
+  .disclaimer-bar b { color:#d9722a; margin-right:4px; }
+  main { padding:14px 12px 0; max-width:920px; margin:0 auto; }
+  .card { background:#fff; border:1px solid #eceff1; border-radius:14px; padding:16px; margin-bottom:14px; }
+  .card h2 { margin:0 0 14px; font-size:15px; color:#333; }
+  .seg { display:flex; gap:8px; margin-bottom:14px; }
+  .seg button { flex:1; padding:11px; border-radius:10px; border:1px solid #dfe3e6; background:#fff; font-size:15px; color:#555; cursor:pointer; font-family:inherit; }
+  .seg button.on { background:#2e7d5b; color:#fff; border-color:#2e7d5b; font-weight:600; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:13px; color:#666; margin-bottom:6px; }
+  .field .hint { font-size:11px; color:#aaa; margin-top:4px; }
+  input[type="datetime-local"], input[type="text"] { width:100%; padding:11px 12px; font-size:15px; border:1px solid #dfe3e6; border-radius:10px; outline:none; background:#fff; color:#222; font-family:inherit; }
+  input:focus { border-color:#4caf7d; box-shadow:0 0 0 3px rgba(76,175,125,.15); }
+  .btn { width:100%; padding:13px; border:none; border-radius:10px; background:#2e7d5b; color:#fff; font-size:16px; font-weight:600; cursor:pointer; margin-top:6px; font-family:inherit; }
+  .btn.secondary { background:#f1f3f4; color:#555; font-weight:400; margin-top:8px; }
+  .result { display:none; }
+  .result.show { display:block; }
+  .status { border-radius:12px; padding:16px; text-align:center; margin-bottom:14px; }
+  .status .big { font-size:22px; font-weight:700; margin-bottom:4px; }
+  .status .sub { font-size:13px; opacity:.9; line-height:1.5; }
+  .st-wait { background:#fff4e0; color:#a0620f; }
+  .st-ready { background:#e8f5ee; color:#1f6b47; }
+  .st-over { background:#fdeaea; color:#b33; }
+  .st-bad { background:#fdeaea; color:#b33; }
+  .tl { display:flex; align-items:flex-start; padding:11px 0; border-bottom:1px solid #f5f5f5; }
+  .tl .dot { width:9px; height:9px; border-radius:50%; margin:6px 12px 0 0; flex:0 0 auto; }
+  .tl .body { flex:1; }
+  .tl .lbl { font-size:14px; color:#444; }
+  .tl .sub { font-size:11px; color:#999; margin-top:2px; }
+  .tl .val { font-size:14px; font-weight:600; color:#222; white-space:nowrap; margin-left:8px; }
+  .tag { display:inline-block; font-size:11px; padding:1px 7px; border-radius:9px; background:#eef2f0; color:#557; margin-left:6px; }
+  .tag.warn { background:#fff1e0; color:#a0620f; }
+  .tag.bad { background:#fdeaea; color:#b33; }
+  .tips { margin-top:14px; font-size:12.5px; color:#666; line-height:1.8; background:#fafbfb; border-radius:10px; padding:12px; }
+  .labelcard { margin-top:14px; border:1px dashed #cfe0d6; background:#f6fbf8; border-radius:12px; padding:12px 14px; }
+  .labelcard .lc-title { font-size:13px; font-weight:600; color:#2e7d5b; margin-bottom:8px; }
+  .labelcard .lc-row { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px dashed #e4efe9; }
+  .labelcard .lc-row:last-child { border-bottom:none; }
+  .labelcard .lc-row span { color:#667; }
+  .labelcard .lc-row b { color:#222; font-weight:600; }
+  .tips b { color:#333; }
+  .rules { display:none; }
+  .rules.show { display:block; }
+  table.rt { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+  table.rt th, table.rt td { border:1px solid #eee; padding:7px 8px; text-align:left; }
+  table.rt th { background:#f7f9f8; font-weight:600; color:#444; }
+  .rec-item { display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px dashed #f0f0f0; font-size:13px; }
+  .rec-item .rn { flex:1; }
+  .rec-item .rt2 { color:#888; font-size:11.5px; margin-top:2px; }
+  .rec-item .del { color:#ccc; cursor:pointer; font-size:16px; }
+  .empty { font-size:13px; color:#aaa; padding:10px 0; text-align:center; }
+  .now { font-size:12px; color:#999; text-align:center; margin-bottom:10px; }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2e7d5b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="锡膏胶水计算器">
 </head>
 <body>
 
 <header>
-  <div class="hd">
-    <img class="av" src="data:image/jpeg;base64,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" alt="头像">
-    <div class="hd-txt">
-      <h1>今天吃了啥 · 营养查询</h1>
-      <p>选中吃的东西，看它有哪些营养（每 100 克）· <span style="opacity:.7">v1.5</span></p>
-    </div>
-  </div>
+  <h1>锡膏 / 胶水 回温计算器</h1>
+  <p>输入取出时间，算出什么时候可以开封使用</p>
 </header>
 
 <div class="disclaimer-bar">
-  <b>⚠ 免责声明</b>　数据仅供参考，不构成营养或医疗建议，<span class="no-commercial">请勿商用</span>
+  <b>⚠ 提醒</b>　仅供现场参考；参数以最新版作业指导书为准，请勿商用
 </div>
-
-<div class="search-wrap">
-  <input id="search" type="text" placeholder="搜食物，比如：牛肉、青菜、米饭…" autocomplete="off">
-</div>
-
-<div class="cats" id="cats"></div>
 
 <main>
-  <section>
-    <div class="photo-card">
-      <div class="ph-head">
-        <span class="ph-title">本餐照片</span>
-        <label class="ph-btn" for="photoInput">📷 拍照 / 选图</label>
-        <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
-      </div>
-      <div id="phBody">
-        <div class="ph-empty">还没有照片，拍一张给这餐留个记录</div>
-      </div>
-    </div>
-    <div class="grid" id="list"></div>
-  </section>
+  <div class="now">当前时间：<span id="nowTime"></span></div>
 
-  <aside id="plate">
-    <h2>我的餐盘 <span class="clear" id="clearBtn">清空</span></h2>
-    <div id="pitems"><div class="empty" style="padding:18px 0;font-size:13px">还没选食物</div></div>
-    <div class="total" id="total" style="display:none">
-      <div class="row"><span>热量</span><b><span id="t_kcal">0</span> kcal</b></div>
-      <div class="row"><span>蛋白质</span><b><span id="t_pro">0</span> g</b></div>
-      <div class="row"><span>脂肪</span><b><span id="t_fat">0</span> g</b></div>
-      <div class="row"><span>碳水</span><b><span id="t_carb">0</span> g</b></div>
-      <div class="row"><span>膳食纤维</span><b><span id="t_fiber">0</span> g</b></div>
-    </div>
-    <div class="note">数据参考《中国食物成分表》，为每 100 克可食部的参考值，实际因品种、部位、烹饪方式有浮动。"份"按约 100 克估算。</div>
-  </aside>
-</main>
+  <div class="card">
+    <h2>① 输入信息</h2>
 
-<div class="detail-mask" id="mask">
-  <div class="detail">
-    <h3 id="d_name"></h3>
-    <div class="sub" id="d_sub"></div>
-    <div id="d_nuts"></div>
-    <div class="dbtns">
-      <button class="add-btn" id="addBtn">加入我的餐盘</button>
-      <button class="close" id="closeBtn">关闭</button>
+    <div class="seg" id="typeSeg">
+      <button class="on" data-type="paste">锡膏</button>
+      <button data-type="glue">胶水</button>
+    </div>
+
+    <div class="seg" id="roundSeg">
+      <button class="on" data-round="1">第一次使用</button>
+      <button data-round="2">第二次使用（二次回温）</button>
+    </div>
+
+    <div class="field">
+      <label id="outLabel">从冰箱取出的时间</label>
+      <input type="datetime-local" id="outTime">
+      <div class="hint" id="thawHint"></div>
+    </div>
+
+    <div class="field" id="firstOutField" style="display:none">
+      <label>第一次取出时间（用于判断报废线，可留空）</label>
+      <input type="datetime-local" id="firstOutTime">
+      <div class="hint" id="firstOutHint"></div>
+    </div>
+
+    <div class="field">
+      <label>开封时间（不知道就留空，默认按回温结束算）</label>
+      <input type="datetime-local" id="openTime">
+    </div>
+
+    <div class="field">
+      <label>批次 / 备注（可选）</label>
+      <input type="text" id="batch" placeholder="例如：M31-GRN360 K1MK · 白班">
+    </div>
+
+    <button class="btn" id="calcBtn">计算</button>
+  </div>
+
+  <div class="card result" id="resultCard">
+    <h2>② 计算结果</h2>
+    <div class="status" id="statusBox">
+      <div class="big" id="statusBig"></div>
+      <div class="sub" id="statusSub"></div>
+    </div>
+
+    <div class="tl">
+      <span class="dot" style="background:#4a90d9"></span>
+      <div class="body"><div class="lbl">取出 / 开始回温</div><div class="sub" id="sOut"></div></div>
+      <span class="val" id="tOut"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#4caf7d"></span>
+      <div class="body"><div class="lbl">回温结束，可以开封</div><div class="sub" id="sReady"></div></div>
+      <span class="val" id="tReady"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#e08b2d"></span>
+      <div class="body"><div class="lbl">开封后使用截止</div><div class="sub" id="sOpen"></div></div>
+      <span class="val" id="tOpen"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#8e44ad"></span>
+      <div class="body"><div class="lbl">未开封室温上限</div><div class="sub" id="sRoom"></div></div>
+      <span class="val" id="tRoom"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#c0392b"></span>
+      <div class="body"><div class="lbl">未开封报废线</div><div class="sub" id="sScrap"></div></div>
+      <span class="val" id="tScrap"></span>
+    </div>
+
+    <div class="labelcard">
+      <div class="lc-title">📋 管控标签填写参考</div>
+      <div class="lc-row"><span>开始回温时间</span><b id="lStart"></b></div>
+      <div class="lc-row"><span>回温结束时间</span><b id="lReady"></b></div>
+      <div class="lc-row"><span>开封时间</span><b id="lOpen"></b></div>
+      <div class="lc-row"><span id="lEndLabel">开封失效时间</span><b id="lEnd"></b></div>
+      <div class="lc-row" id="lFridgeRow"><span>放入冰箱时间</span><b>（未使用则填此时间）</b></div>
+    </div>
+
+    <div class="tips" id="tipsBox"></div>
+    <button class="btn secondary" id="saveBtn">保存这条记录</button>
+  </div>
+
+  <div class="card">
+    <h2>③ 历史记录</h2>
+    <div id="records"><div class="empty">还没有记录</div></div>
+    <button class="btn secondary" id="clearBtn">清空记录</button>
+  </div>
+
+  <div class="card">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      <span>④ 规则速查</span>
+      <span style="font-size:12px;color:#2e7d5b;cursor:pointer" id="toggleRules">展开 ▾</span>
+    </h2>
+    <div class="rules" id="rulesBox">
+      <table class="rt">
+        <tr><th>项目</th><th>锡膏</th><th>胶水</th></tr>
+        <tr><td>冰箱储存温度</td><td>5～10℃（储存 0～10℃）</td><td>5～10℃（储存 5～12℃）</td></tr>
+        <tr><td>未开封最长储存</td><td>6 个月</td><td>6 个月</td></tr>
+        <tr><td>回温条件</td><td>25±3℃，湿度 30%～60%，4 小时</td><td>25±3℃，湿度 30%～65%，4 小时</td></tr>
+        <tr><td>开封后使用</td><td>24 小时内用完</td><td>48 小时内用完</td></tr>
+        <tr><td>未开封室温上限</td><td>24 小时（超过需二次回温 4h）</td><td>72 小时（超过需二次回温 4h）</td></tr>
+        <tr><td>未开封报废线</td><td>48 小时</td><td>120 小时</td></tr>
+        <tr><td>第二次使用（二次回温）</td><td>未开封超 24h 可二次回温 4h，开封后 24h 内用完；达 48h 报废</td><td>未开封超 72h 可二次回温 4h，开封后 48h 内用完；达 120h 报废</td></tr>
+        <tr><td>钢网回收料</td><td>8 小时内用完，不可回冰箱</td><td>停线/中断 &gt;4 小时报废</td></tr>
+        <tr><td>印刷后到下一工序</td><td>2 小时内完成回流焊</td><td>4 小时内完成固化</td></tr>
+        <tr><td>停线处理</td><td>印刷停止 &gt;0.5 小时需收回重新搅拌</td><td>—</td></tr>
+        <tr><td>搅拌</td><td>搅拌机 3～5 分钟，转速 60%～90%</td><td>—</td></tr>
+      </table>
+      <div class="tips" style="margin-top:10px">回温结束前不可开封，不可用任何方式加速回温。已开封的优先使用，其次是一次回温未开封，最后按内部标签 use before。</div>
     </div>
   </div>
-</div>
+</main>
 
 <script>
-// 食物库：每 100g 可食部
-// [名称, 别名, 分类, 热量kcal, 蛋白质g, 脂肪g, 碳水g, 膳食纤维g, 钙mg, 铁mg, 锌mg, 维Cmg]
-const FOODS = [
-  ["米饭（熟）","白米饭,大米饭","主食",116,2.6,0.3,25.9,0.3,7,1.3,0.6,0],
-  ["面条（熟）","面,汤面","主食",110,4.5,0.5,24.3,0.8,8,1.5,0.6,0],
-  ["馒头","馍,白馒头","主食",223,7.0,1.1,47.0,1.3,38,1.8,0.7,0],
-  ["全麦面包","面包,吐司","主食",246,8.8,3.5,45.0,6.0,80,2.5,1.5,0],
-  ["燕麦片","燕麦,麦片","主食",338,10.1,0.2,77.4,6.0,186,7.0,2.6,0],
-  ["红薯","地瓜,番薯","主食",106,1.6,0.2,25.2,1.6,23,0.5,0.15,26],
-  ["玉米（鲜）","玉米,苞米","主食",112,4.0,1.2,22.8,2.9,0,1.1,0.9,16],
-  ["土豆","马铃薯,洋芋","主食",81,2.6,0.2,17.8,1.1,7,0.4,0.3,27],
-  ["饺子（猪肉）","水饺,饺子","主食",240,9.0,10.0,28.0,1.5,20,1.5,1.2,0],
-  ["包子（肉馅）","包子,肉包","主食",227,8.5,8.0,30.0,1.2,30,1.4,1.1,0],
-
-  ["牛肉（瘦）","牛肉,牛里脊,牛瘦肉","肉蛋",106,20.2,2.3,1.2,0,9,2.8,3.7,0],
-  ["牛排（西冷）","牛排,西冷,沙朗","肉蛋",250,18.0,20.0,0,0,10,2.0,3.0,0],
-  ["牛腩","牛腩,牛肋条","肉蛋",332,17.0,29.0,0,0,8,2.0,3.5,0],
-  ["猪肉（里脊）","猪里脊,瘦肉,猪肉","肉蛋",155,20.2,7.9,0.7,0,6,1.5,2.3,0],
-  ["五花肉","五花肉,猪肉","肉蛋",568,9.3,59.0,0,0,6,1.0,1.2,0],
-  ["鸡胸肉","鸡胸,鸡肉","肉蛋",133,19.4,5.0,2.5,0,3,0.6,0.5,0],
-  ["鸡腿","鸡腿,鸡腿肉","肉蛋",181,16.0,13.0,0,0,6,1.5,1.1,0],
-  ["鸡蛋","鸡蛋,蛋,水煮蛋","肉蛋",144,13.3,8.8,2.8,0,56,2.0,1.1,0],
-  ["鸭肉","鸭,鸭肉","肉蛋",240,15.5,19.7,0.2,0,6,2.2,1.3,0],
-  ["羊肉","羊肉,羊腿","肉蛋",203,19.0,14.1,0,0,6,2.3,3.2,0],
-
-  ["三文鱼","鲑鱼,三文鱼","水产",139,17.2,7.8,0,0,13,0.3,0.4,0],
-  ["虾","基围虾,虾仁,河虾","水产",101,18.2,1.4,3.9,0,83,2.0,1.4,0],
-  ["带鱼","带鱼,刀鱼","水产",127,17.7,4.9,3.1,0,28,1.2,0.7,0],
-  ["鲈鱼","鲈鱼,海鲈","水产",105,18.6,3.4,0,0,138,2.0,2.8,0],
-  ["鲫鱼","鲫鱼,河鲫","水产",108,17.1,2.7,3.8,0,79,1.3,1.9,0],
-
-  ["豆腐（北）","北豆腐,老豆腐,豆腐","豆奶",98,12.2,4.8,2.0,0.5,138,1.9,1.1,0],
-  ["豆腐（南）","南豆腐,嫩豆腐","豆奶",57,6.2,2.5,2.6,0.4,116,1.2,0.6,0],
-  ["豆浆","豆浆,豆奶","豆奶",31,3.0,1.6,1.2,0.4,10,0.5,0.2,0],
-  ["牛奶","牛奶,纯牛奶","豆奶",54,3.0,3.2,3.4,0,104,0.3,0.4,1],
-  ["酸奶","酸奶,酸牛奶","豆奶",72,2.5,2.7,9.3,0,118,0.4,0.5,1],
-  ["黄豆","黄豆,大豆","豆奶",390,35.0,16.0,34.2,15.5,191,8.2,3.3,0],
-
-  ["小白菜","青菜,小白菜,油菜","蔬菜",15,1.5,0.3,2.7,1.1,90,1.9,0.5,28],
-  ["上海青","上海青,青江菜","蔬菜",14,1.7,0.2,2.4,1.1,108,1.2,0.35,36],
-  ["菠菜","菠菜","蔬菜",24,2.6,0.3,4.5,1.7,66,2.9,0.85,32],
-  ["生菜","生菜,莴苣","蔬菜",15,1.3,0.3,2.0,0.7,34,0.9,0.27,13],
-  ["西兰花","西兰花,绿花菜","蔬菜",36,4.1,0.6,4.3,1.6,67,1.0,0.78,51],
-  ["胡萝卜","胡萝卜,红萝卜","蔬菜",39,1.0,0.2,8.8,1.1,32,0.5,0.2,13],
-  ["番茄","西红柿,番茄","蔬菜",20,0.9,0.2,4.0,0.5,10,0.4,0.13,19],
-  ["黄瓜","黄瓜,青瓜","蔬菜",16,0.8,0.2,2.9,0.5,24,0.5,0.18,9],
-  ["茄子","茄子","蔬菜",23,1.1,0.2,4.9,1.3,24,0.5,0.23,3],
-  ["白萝卜","萝卜,白萝卜","蔬菜",21,0.9,0.1,5.0,1.0,36,0.5,0.3,21],
-  ["香菇（鲜）","香菇,冬菇","蔬菜",26,2.2,0.3,5.2,3.3,2,0.3,0.66,1],
-  ["木耳（水发）","木耳,黑木耳","蔬菜",27,1.5,0.2,6.0,2.6,34,5.5,0.53,1],
-  ["冬瓜","冬瓜","蔬菜",12,0.4,0.2,2.6,0.7,19,0.2,0.07,18],
-
-  ["苹果","苹果","水果",53,0.2,0.2,13.5,1.2,4,0.6,0.19,3],
-  ["香蕉","香蕉","水果",93,1.4,0.2,22.0,1.2,7,0.4,0.18,8],
-  ["橙子","橙,橙子,橘子","水果",48,0.8,0.2,11.1,0.6,20,0.4,0.14,33],
-  ["葡萄","葡萄","水果",45,0.5,0.2,10.3,0.4,5,0.4,0.18,25],
-  ["西瓜","西瓜","水果",31,0.5,0.1,7.9,0.2,8,0.3,0.1,6],
-  ["蓝莓","蓝莓","水果",57,0.7,0.3,14.5,2.4,6,0.3,0.16,10],
-  ["梨","梨,雪梨","水果",51,0.4,0.2,13.3,3.1,9,0.5,0.46,6],
-
-  ["花生（炒）","花生,花生米","坚果",589,24.1,44.4,25.7,5.5,47,1.3,2.5,0],
-  ["核桃","核桃,胡桃","坚果",646,14.9,58.8,19.1,9.5,56,2.7,2.2,1],
-  ["杏仁","杏仁,巴旦木","坚果",578,21.2,49.9,21.6,12.5,264,3.7,3.1,0],
-  ["瓜子","瓜子,葵花籽","坚果",606,22.6,53.4,17.3,4.8,72,5.9,6.0,0],
-
-  ["可乐","可乐,汽水","其他",43,0,0,10.8,0,2,0.1,0.02,0],
-  ["啤酒","啤酒","其他",32,0.4,0,2.4,0,6,0.4,0.2,0],
-  ["沙拉酱","沙拉酱,蛋黄酱","其他",725,0.9,78.0,3.7,0,9,0.3,0.2,0],
-  ["橄榄油","橄榄油,食用油","其他",899,0,99.9,0,0,0,0,0,0]
-];
-
-const FIELDS = ["热量","蛋白质","脂肪","碳水","膳食纤维","钙","铁","锌","维生素C"];
-const UNITS  = ["kcal","g","g","g","g","mg","mg","mg","mg"];
-
-let curCat = "全部";
-let keyword = "";
-let plate = []; // {idx, qty}
-let expanded = new Set();
-
 const $ = id => document.getElementById(id);
 
-function cats() {
-  const set = ["全部", ...new Set(FOODS.map(f => f[2]))];
-  $("cats").innerHTML = set.map(c =>
-    `<div class="cat ${c===curCat?'active':''}" data-c="${c}">${c}</div>`).join("");
-  $("cats").querySelectorAll(".cat").forEach(el =>
-    el.onclick = () => { curCat = el.dataset.c; render(); cats(); });
-}
-
-function match(f) {
-  if (curCat !== "全部" && f[2] !== curCat) return false;
-  if (!keyword) return true;
-  const k = keyword.toLowerCase();
-  return f[0].toLowerCase().includes(k) || (f[1]||"").toLowerCase().includes(k) || f[2].includes(k);
-}
-
-function render() {
-  const list = FOODS.map((f,i)=>({f,i})).filter(o => match(o.f));
-  $("list").innerHTML = list.length ? list.map(({f,i}) => `
-    <div class="food" data-i="${i}">
-      <div class="tag">${f[2]}</div>
-      <div class="name">${f[0]}</div>
-      <div class="alias">${f[1]||""}</div>
-      <div class="kcal">${f[3]}<span>kcal / 100g</span></div>
-      <button class="plus" data-add="${i}" title="加入餐盘">+</button>
-    </div>`).join("") : `<div class="empty">没找到这个食物，换个词试试</div>`;
-  $("list").querySelectorAll(".food").forEach(el =>
-    el.onclick = () => showDetail(+el.dataset.i));
-  $("list").querySelectorAll(".plus").forEach(btn =>
-    btn.onclick = e => { e.stopPropagation(); addToPlate(+btn.dataset.add); });
-}
-
-function showDetail(i) {
-  const f = FOODS[i];
-  $("d_name").textContent = f[0];
-  $("d_sub").textContent = (f[1] ? "又名：" + f[1] + " · " : "") + f[2] + " · 每 100 克可食部";
-  $("d_nuts").innerHTML = FIELDS.map((n,k) =>
-    `<div class="nut"><span>${n}</span><b>${f[3+k]} ${UNITS[k]}</b></div>`).join("");
-  $("mask").classList.add("show");
-  $("closeBtn").onclick = () => $("mask").classList.remove("show");
-  $("addBtn").onclick = () => { addToPlate(i); $("mask").classList.remove("show"); };
-  $("mask").onclick = e => { if (e.target === $("mask")) $("mask").classList.remove("show"); };
-}
-
-function addToPlate(i) {
-  const hit = plate.find(p => p.idx === i);
-  if (hit) hit.qty += 1; else plate.push({idx:i, qty:1});
-  renderPlate();
-}
-
-function renderPlate() {
-  const box = $("pitems");
-  if (!plate.length) {
-    box.innerHTML = `<div class="empty" style="padding:18px 0;font-size:13px">还没选食物</div>`;
-    $("total").style.display = "none";
-    return;
+const CFG = {
+  paste: {
+    name: "锡膏",
+    thawH: 4,
+    humid: "30%～60%",
+    openLifeH: 24,
+    roomLimitH: 24,
+    scrapH: 48,
+    notes: [
+      "钢网上回收的锡膏 8 小时内用完，且不能放回冰箱",
+      "印刷完成后 2 小时内完成回流焊",
+      "印刷停止超过 0.5 小时，需收回重新搅拌并清洗钢网",
+      "开封前需搅拌 3～5 分钟（转速 60%～90%）"
+    ]
+  },
+  glue: {
+    name: "胶水",
+    thawH: 4,
+    humid: "30%～65%",
+    openLifeH: 48,
+    roomLimitH: 72,
+    scrapH: 120,
+    notes: [
+      "钢网上的胶水，印刷停止或中断超过 4 小时即报废",
+      "PCB 印刷完成后 4 小时内完成固化",
+      "维修区域使用的胶水须注明开封时间和失效时间",
+      "胶水必须倒立存放"
+    ]
   }
-  box.innerHTML = plate.map((p,k) => {
-    const f = FOODS[p.idx];
-    const q = p.qty;
-    const detail = expanded.has(p.idx) ? `<div class="pdetail">
-        <span>蛋白 <b>${(f[4]*q).toFixed(1)}g</b></span>
-        <span>脂肪 <b>${(f[5]*q).toFixed(1)}g</b></span>
-        <span>碳水 <b>${(f[6]*q).toFixed(1)}g</b></span>
-        <span>纤维 <b>${(f[7]*q).toFixed(1)}g</b></span>
-        <span>钙 <b>${(f[8]*q).toFixed(0)}mg</b></span>
-        <span>铁 <b>${(f[9]*q).toFixed(1)}mg</b></span>
-      </div>` : "";
-    return `<div class="pitem">
-      <span class="pn" data-x="${p.idx}" title="点名字看营养">${f[0]} <span style="color:#bbb;font-size:11px">${expanded.has(p.idx)?'▾':'▸'}</span></span>
-      <span class="pk">${f[3]*q}<span style="font-weight:400;color:#888;font-size:11px"> kcal</span></span>
-      <span class="stepper">
-        <button data-m="${k}">−</button><span>${q}</span><button data-p="${k}">+</button>
-      </span>
-      <span class="del" data-d="${k}">×</span>
-    </div>` + detail;
-  }).join("");
-  box.querySelectorAll(".pn").forEach(el => el.onclick = () => {
-    const id = +el.dataset.x;
-    if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
-    renderPlate();
-  });
-  box.querySelectorAll("button[data-p]").forEach(b => b.onclick = () => { plate[+b.dataset.p].qty++; renderPlate(); });
-  box.querySelectorAll("button[data-m]").forEach(b => b.onclick = () => {
-    const k = +b.dataset.m; plate[k].qty--; if (plate[k].qty <= 0) plate.splice(k,1); renderPlate();
-  });
-  box.querySelectorAll(".del").forEach(b => b.onclick = () => { plate.splice(+b.dataset.d,1); renderPlate(); });
-
-  const sum = [0,0,0,0,0];
-  plate.forEach(p => {
-    const f = FOODS[p.idx];
-    for (let k=0;k<5;k++) sum[k] += f[3+k] * p.qty;
-  });
-  $("t_kcal").textContent = sum[0].toFixed(0);
-  $("t_pro").textContent = sum[1].toFixed(1);
-  $("t_fat").textContent = sum[2].toFixed(1);
-  $("t_carb").textContent = sum[3].toFixed(1);
-  $("t_fiber").textContent = sum[4].toFixed(1);
-  $("total").style.display = "block";
-}
-
-$("search").addEventListener("input", e => { keyword = e.target.value.trim(); render(); });
-$("clearBtn").onclick = () => { plate = []; renderPlate(); };
-
-// ---- 本餐照片（本地保存，不上传）----
-const PH_KEY = "mealPhoto_v1";
-const phBody = $("phBody");
-const photoInput = $("photoInput");
-
-function renderPhoto(dataUrl) {
-  if (!dataUrl) {
-    phBody.innerHTML = '<div class="ph-empty">还没有照片，拍一张给这餐留个记录</div>';
-    return;
-  }
-  phBody.innerHTML = '<div class="ph-img-wrap"><img src="' + dataUrl + '" alt="本餐照片">' +
-    '<button class="ph-del" id="phDel">删除</button></div>' +
-    '<div class="ph-tip">照片只存在本机浏览器里，不会上传</div>';
-  $("phDel").onclick = () => { try { localStorage.removeItem(PH_KEY); } catch (e) {} renderPhoto(null); };
-}
-
-photoInput.onchange = e => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 900;
-      let w = img.width, h = img.height;
-      const s = Math.min(1, max / Math.max(w, h));
-      w = Math.round(w * s); h = Math.round(h * s);
-      const cv = document.createElement("canvas");
-      cv.width = w; cv.height = h;
-      cv.getContext("2d").drawImage(img, 0, 0, w, h);
-      const dataUrl = cv.toDataURL("image/jpeg", 0.82);
-      try { localStorage.setItem(PH_KEY, dataUrl); } catch (err) {}
-      renderPhoto(dataUrl);
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-  photoInput.value = "";
 };
 
-try { renderPhoto(localStorage.getItem(PH_KEY)); } catch (e) { renderPhoto(null); }
+let curType = "paste";
+let curRound = 1;
+let last = null;
+const KEY = "solderGlue_v2";
 
-cats(); render();
+function pad(n){ return n < 10 ? "0" + n : "" + n; }
+function fmt(d){
+  return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
+         " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+function toLocalInput(d){
+  return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
+         "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+function durText(ms){
+  const m = Math.round(ms / 60000);
+  if (m < 0) return "已超时";
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+  let s = "";
+  if (d > 0) s += d + " 天 ";
+  if (h > 0) s += h + " 小时 ";
+  if (mm > 0 || s === "") s += mm + " 分钟";
+  return s.trim();
+}
+
+function tick(){ $("nowTime").textContent = fmt(new Date()); }
+setInterval(tick, 1000); tick();
+$("outTime").value = toLocalInput(new Date());
+
+$("typeSeg").querySelectorAll("button").forEach(b => {
+  b.onclick = () => {
+    $("typeSeg").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    curType = b.dataset.type;
+    updateHint();
+    if ($("resultCard").classList.contains("show")) calc();
+  };
+});
+
+$("roundSeg").querySelectorAll("button").forEach(b => {
+  b.onclick = () => {
+    $("roundSeg").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    curRound = +b.dataset.round;
+    updateHint();
+    if ($("resultCard").classList.contains("show")) calc();
+  };
+});
+
+function updateHint(){
+  const c = CFG[curType];
+  const isSecond = curRound === 2;
+  $("outLabel").textContent = isSecond ? "第二次从冰箱取出的时间（开始二次回温）" : "从冰箱取出的时间";
+  $("firstOutField").style.display = isSecond ? "block" : "none";
+  $("thawHint").textContent = (isSecond ? "二次回温 " : "回温 ") + c.thawH +
+    " 小时（25±3℃，湿度 " + c.humid + "），回温结束前不可开封";
+  $("firstOutHint").textContent = "填第一次取出时间，用来算 " + c.scrapH + " 小时报废线；不填就按本次时间算";
+}
+updateHint();
+
+$("toggleRules").onclick = () => {
+  const box = $("rulesBox");
+  const on = box.classList.toggle("show");
+  $("toggleRules").textContent = on ? "收起 ▴" : "展开 ▾";
+};
+
+function calc(){
+  const raw = $("outTime").value;
+  if (!raw) { alert("请先选择取出时间"); return; }
+
+  const c = CFG[curType];
+  const out = new Date(raw);
+  const now = new Date();
+  const isSecond = curRound === 2;
+
+  const firstOutRaw = $("firstOutTime").value;
+  const baseOut = (isSecond && firstOutRaw) ? new Date(firstOutRaw) : out;
+
+  const readyAt = new Date(out.getTime() + c.thawH * 3600 * 1000);
+  const openRaw = $("openTime").value;
+  const openAt = openRaw ? new Date(openRaw) : readyAt;
+  const openDeadline = new Date(openAt.getTime() + c.openLifeH * 3600 * 1000);
+  const roomLimit = new Date(out.getTime() + c.roomLimitH * 3600 * 1000);
+  const scrapAt = new Date(baseOut.getTime() + c.scrapH * 3600 * 1000);
+
+  $("tOut").textContent = fmt(out);
+  $("tReady").textContent = fmt(readyAt);
+  $("tOpen").textContent = fmt(openDeadline);
+  $("tRoom").textContent = fmt(roomLimit);
+  $("tScrap").textContent = fmt(scrapAt);
+
+  $("sOut").textContent = c.name + (isSecond ? " · 第二次使用" : "");
+  $("sReady").textContent = (isSecond ? "二次回温 " : "回温 ") + c.thawH + " 小时 · 25±3℃ / " + c.humid;
+  $("sOpen").textContent = openRaw ? "按实际开封时间 + " + c.openLifeH + " 小时" : "未填开封时间，按回温结束 + " + c.openLifeH + " 小时";
+  $("sRoom").textContent = "未开封室温超过 " + c.roomLimitH + " 小时需二次回温 " + c.thawH + " 小时";
+  $("sScrap").textContent = isSecond && firstOutRaw ? "从第一次取出算 " + c.scrapH + " 小时" : "未开封室温达 " + c.scrapH + " 小时即报废";
+
+  // 管控标签
+  $("lStart").textContent = fmt(out);
+  $("lReady").textContent = fmt(readyAt);
+  $("lOpen").textContent = fmt(openAt);
+  if (isSecond) {
+    $("lEndLabel").textContent = "报废时间";
+    $("lEnd").textContent = fmt(scrapAt);
+    $("lFridgeRow").style.display = "none";
+  } else {
+    $("lEndLabel").textContent = "开封失效时间";
+    $("lEnd").textContent = fmt(openDeadline);
+    $("lFridgeRow").style.display = "flex";
+  }
+
+  const box = $("statusBox");
+  box.className = "status";
+  let big = "", sub = "";
+
+  if (out > now) {
+    box.classList.add("st-bad");
+    big = "取出时间还没到";
+    sub = "请检查输入的时间";
+  } else if (now < readyAt) {
+    box.classList.add("st-wait");
+    big = "还在回温中";
+    sub = "还需 " + durText(readyAt - now) + "，现在不能开盖";
+  } else if (now > scrapAt) {
+    box.classList.add("st-over");
+    big = "已超过报废线";
+    sub = "未开封室温已超 " + c.scrapH + " 小时，应报废";
+  } else if (now > openDeadline) {
+    box.classList.add("st-over");
+    big = "已超过使用时限";
+    sub = "超出 " + durText(now - openDeadline) + "，应报废或按 WI 处理";
+  } else if (now > roomLimit && !openRaw) {
+    box.classList.add("st-wait");
+    big = "未开封超时，需二次回温";
+    sub = "已超 " + c.roomLimitH + " 小时，需二次回温 " + c.thawH + " 小时后再用";
+  } else {
+    box.classList.add("st-ready");
+    big = "可以用了";
+    sub = "开封后剩余 " + durText(openDeadline - now) + "（截止 " + fmt(openDeadline) + "）";
+  }
+
+  $("statusBig").textContent = big;
+  $("statusSub").textContent = sub;
+
+  $("tipsBox").innerHTML = "<b>现场注意：</b><br>• " + c.notes.join("<br>• ");
+  $("resultCard").classList.add("show");
+
+  last = {
+    type: curType,
+    batch: $("batch").value.trim(),
+    round: curRound,
+    out: out.getTime(),
+    ready: readyAt.getTime(),
+    open: openAt.getTime(),
+    deadline: openDeadline.getTime(),
+    scrap: scrapAt.getTime()
+  };
+
+  window.scrollTo({ top: $("resultCard").offsetTop - 70, behavior: "smooth" });
+}
+
+$("calcBtn").onclick = calc;
+
+function loadRecords(){
+  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e){ return []; }
+}
+function saveRecords(list){
+  try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 30))); } catch(e){}
+}
+function renderRecords(){
+  const list = loadRecords();
+  const box = $("records");
+  if (!list.length) { box.innerHTML = '<div class="empty">还没有记录</div>'; return; }
+  box.innerHTML = list.map((r, i) => {
+    const c = CFG[r.type] || CFG.paste;
+    const rn = r.round === 2 ? "第2次" : "第1次";
+    return '<div class="rec-item">' +
+      '<div class="rn">' + (r.batch || (c.name + "（无备注）")) + ' <span class="tag">' + rn + '</span>' +
+        '<div class="rt2">' + c.name + ' ｜ 取出 ' + fmt(new Date(r.out)) +
+        ' ｜ 可用 ' + fmt(new Date(r.ready)) + ' ~ ' + fmt(new Date(r.deadline)) + '</div></div>' +
+      '<div class="del" data-i="' + i + '">×</div></div>';
+  }).join("");
+  box.querySelectorAll(".del").forEach(el => el.onclick = () => {
+    const list = loadRecords();
+    list.splice(+el.dataset.i, 1);
+    saveRecords(list); renderRecords();
+  });
+}
+
+$("saveBtn").onclick = () => {
+  if (!last) return;
+  const list = loadRecords();
+  list.unshift(last);
+  saveRecords(list);
+  renderRecords();
+  $("saveBtn").textContent = "已保存 ✓";
+  setTimeout(() => { $("saveBtn").textContent = "保存这条记录"; }, 1500);
+};
+
+$("clearBtn").onclick = () => {
+  if (!confirm("确定清空所有记录？")) return;
+  saveRecords([]); renderRecords();
+};
+
+renderRecords();
+setInterval(() => { if (last) calc(); }, 60000);
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
 </body>
 </html>
