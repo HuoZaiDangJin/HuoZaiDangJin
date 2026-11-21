@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>锡膏 / 胶水 回温计算器</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; padding:0 0 30px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; background:#f5f6f8; color:#222; }
+  header { background:linear-gradient(135deg,#2e7d5b,#4caf7d); color:#fff; padding:18px 16px 16px; position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+  header h1 { margin:0; font-size:19px; font-weight:600; }
+  header p { margin:4px 0 0; font-size:12px; opacity:.85; }
+  .disclaimer-bar { background:#fff4e0; border-left:5px solid #e08b2d; border-bottom:1px solid #f3dfbb; color:#8a5a1a; font-size:13px; padding:10px 16px; line-height:1.5; }
+  .disclaimer-bar b { color:#d9722a; margin-right:4px; }
+  main { padding:14px 12px 0; max-width:920px; margin:0 auto; }
+  .card { background:#fff; border:1px solid #eceff1; border-radius:14px; padding:16px; margin-bottom:14px; }
+  .card h2 { margin:0 0 14px; font-size:15px; color:#333; }
+  .seg { display:flex; gap:8px; margin-bottom:14px; }
+  .seg button { flex:1; padding:11px; border-radius:10px; border:1px solid #dfe3e6; background:#fff; font-size:15px; color:#555; cursor:pointer; font-family:inherit; }
+  .seg button.on { background:#2e7d5b; color:#fff; border-color:#2e7d5b; font-weight:600; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:13px; color:#666; margin-bottom:6px; }
+  .field .hint { font-size:11px; color:#aaa; margin-top:4px; }
+  input[type="datetime-local"], input[type="text"] { width:100%; padding:11px 12px; font-size:15px; border:1px solid #dfe3e6; border-radius:10px; outline:none; background:#fff; color:#222; font-family:inherit; }
+  input:focus { border-color:#4caf7d; box-shadow:0 0 0 3px rgba(76,175,125,.15); }
+  .btn { width:100%; padding:13px; border:none; border-radius:10px; background:#2e7d5b; color:#fff; font-size:16px; font-weight:600; cursor:pointer; margin-top:6px; font-family:inherit; }
+  .btn.secondary { background:#f1f3f4; color:#555; font-weight:400; margin-top:8px; }
+  .result { display:none; }
+  .result.show { display:block; }
+  .status { border-radius:12px; padding:16px; text-align:center; margin-bottom:14px; }
+  .status .big { font-size:22px; font-weight:700; margin-bottom:4px; }
+  .status .sub { font-size:13px; opacity:.9; line-height:1.5; }
+  .st-wait { background:#fff4e0; color:#a0620f; }
+  .st-ready { background:#e8f5ee; color:#1f6b47; }
+  .st-over { background:#fdeaea; color:#b33; }
+  .st-bad { background:#fdeaea; color:#b33; }
+  .tl { display:flex; align-items:flex-start; padding:11px 0; border-bottom:1px solid #f5f5f5; }
+  .tl .dot { width:9px; height:9px; border-radius:50%; margin:6px 12px 0 0; flex:0 0 auto; }
+  .tl .body { flex:1; }
+  .tl .lbl { font-size:14px; color:#444; }
+  .tl .sub { font-size:11px; color:#999; margin-top:2px; }
+  .tl .val { font-size:14px; font-weight:600; color:#222; white-space:nowrap; margin-left:8px; }
+  .tag { display:inline-block; font-size:11px; padding:1px 7px; border-radius:9px; background:#eef2f0; color:#557; margin-left:6px; }
+  .tag.warn { background:#fff1e0; color:#a0620f; }
+  .tag.bad { background:#fdeaea; color:#b33; }
+  .tips { margin-top:14px; font-size:12.5px; color:#666; line-height:1.8; background:#fafbfb; border-radius:10px; padding:12px; }
+  .labelcard { margin-top:14px; border:1px dashed #cfe0d6; background:#f6fbf8; border-radius:12px; padding:12px 14px; }
+  .labelcard .lc-title { font-size:13px; font-weight:600; color:#2e7d5b; margin-bottom:8px; }
+  .labelcard .lc-row { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px dashed #e4efe9; }
+  .labelcard .lc-row:last-child { border-bottom:none; }
+  .labelcard .lc-row span { color:#667; }
+  .labelcard .lc-row b { color:#222; font-weight:600; }
+  .tips b { color:#333; }
+  .rules { display:none; }
+  .rules.show { display:block; }
+  table.rt { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+  table.rt th, table.rt td { border:1px solid #eee; padding:7px 8px; text-align:left; }
+  table.rt th { background:#f7f9f8; font-weight:600; color:#444; }
+  .rec-item { display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px dashed #f0f0f0; font-size:13px; }
+  .rec-item .rn { flex:1; }
+  .rec-item .rt2 { color:#888; font-size:11.5px; margin-top:2px; }
+  .rec-item .del { color:#ccc; cursor:pointer; font-size:16px; }
+  .empty { font-size:13px; color:#aaa; padding:10px 0; text-align:center; }
+  .now { font-size:12px; color:#999; text-align:center; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>锡膏 / 胶水 回温计算器</h1>
+  <p>输入取出时间，算出什么时候可以开封使用</p>
+</header>
+
+<div class="disclaimer-bar">
+  <b>⚠ 提醒</b>　仅供现场参考；参数以最新版作业指导书为准，请勿商用
+</div>
+
+<main>
+  <div class="now">当前时间：<span id="nowTime"></span></div>
+
+  <div class="card">
+    <h2>① 输入信息</h2>
+
+    <div class="seg" id="typeSeg">
+      <button class="on" data-type="paste">锡膏</button>
+      <button data-type="glue">胶水</button>
+    </div>
+
+    <div class="seg" id="roundSeg">
+      <button class="on" data-round="1">第一次使用</button>
+      <button data-round="2">第二次使用（二次回温）</button>
+    </div>
+
+    <div class="field">
+      <label id="outLabel">从冰箱取出的时间</label>
+      <input type="datetime-local" id="outTime">
+      <div class="hint" id="thawHint"></div>
+    </div>
+
+    <div class="field" id="firstOutField" style="display:none">
+      <label>第一次取出时间（用于判断报废线，可留空）</label>
+      <input type="datetime-local" id="firstOutTime">
+      <div class="hint" id="firstOutHint"></div>
+    </div>
+
+    <div class="field">
+      <label>开封时间（不知道就留空，默认按回温结束算）</label>
+      <input type="datetime-local" id="openTime">
+    </div>
+
+    <div class="field">
+      <label>批次 / 备注（可选）</label>
+      <input type="text" id="batch" placeholder="例如：M31-GRN360 K1MK · 白班">
+    </div>
+
+    <button class="btn" id="calcBtn">计算</button>
+  </div>
+
+  <div class="card result" id="resultCard">
+    <h2>② 计算结果</h2>
+    <div class="status" id="statusBox">
+      <div class="big" id="statusBig"></div>
+      <div class="sub" id="statusSub"></div>
+    </div>
+
+    <div class="tl">
+      <span class="dot" style="background:#4a90d9"></span>
+      <div class="body"><div class="lbl">取出 / 开始回温</div><div class="sub" id="sOut"></div></div>
+      <span class="val" id="tOut"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#4caf7d"></span>
+      <div class="body"><div class="lbl">回温结束，可以开封</div><div class="sub" id="sReady"></div></div>
+      <span class="val" id="tReady"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#e08b2d"></span>
+      <div class="body"><div class="lbl">开封后使用截止</div><div class="sub" id="sOpen"></div></div>
+      <span class="val" id="tOpen"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#8e44ad"></span>
+      <div class="body"><div class="lbl">未开封室温上限</div><div class="sub" id="sRoom"></div></div>
+      <span class="val" id="tRoom"></span>
+    </div>
+    <div class="tl">
+      <span class="dot" style="background:#c0392b"></span>
+      <div class="body"><div class="lbl">未开封报废线</div><div class="sub" id="sScrap"></div></div>
+      <span class="val" id="tScrap"></span>
+    </div>
+
+    <div class="labelcard">
+      <div class="lc-title">📋 管控标签填写参考</div>
+      <div class="lc-row"><span>开始回温时间</span><b id="lStart"></b></div>
+      <div class="lc-row"><span>回温结束时间</span><b id="lReady"></b></div>
+      <div class="lc-row"><span>开封时间</span><b id="lOpen"></b></div>
+      <div class="lc-row"><span id="lEndLabel">开封失效时间</span><b id="lEnd"></b></div>
+      <div class="lc-row" id="lFridgeRow"><span>放入冰箱时间</span><b>（未使用则填此时间）</b></div>
+    </div>
+
+    <div class="tips" id="tipsBox"></div>
+    <button class="btn secondary" id="saveBtn">保存这条记录</button>
+  </div>
+
+  <div class="card">
+    <h2>③ 历史记录</h2>
+    <div id="records"><div class="empty">还没有记录</div></div>
+    <button class="btn secondary" id="clearBtn">清空记录</button>
+  </div>
+
+  <div class="card">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      <span>④ 规则速查</span>
+      <span style="font-size:12px;color:#2e7d5b;cursor:pointer" id="toggleRules">展开 ▾</span>
+    </h2>
+    <div class="rules" id="rulesBox">
+      <table class="rt">
+        <tr><th>项目</th><th>锡膏</th><th>胶水</th></tr>
+        <tr><td>冰箱储存温度</td><td>5～10℃（储存 0～10℃）</td><td>5～10℃（储存 5～12℃）</td></tr>
+        <tr><td>未开封最长储存</td><td>6 个月</td><td>6 个月</td></tr>
+        <tr><td>回温条件</td><td>25±3℃，湿度 30%～60%，4 小时</td><td>25±3℃，湿度 30%～65%，4 小时</td></tr>
+        <tr><td>开封后使用</td><td>24 小时内用完</td><td>48 小时内用完</td></tr>
+        <tr><td>未开封室温上限</td><td>24 小时（超过需二次回温 4h）</td><td>72 小时（超过需二次回温 4h）</td></tr>
+        <tr><td>未开封报废线</td><td>48 小时</td><td>120 小时</td></tr>
+        <tr><td>第二次使用（二次回温）</td><td>未开封超 24h 可二次回温 4h，开封后 24h 内用完；达 48h 报废</td><td>未开封超 72h 可二次回温 4h，开封后 48h 内用完；达 120h 报废</td></tr>
+        <tr><td>钢网回收料</td><td>8 小时内用完，不可回冰箱</td><td>停线/中断 &gt;4 小时报废</td></tr>
+        <tr><td>印刷后到下一工序</td><td>2 小时内完成回流焊</td><td>4 小时内完成固化</td></tr>
+        <tr><td>停线处理</td><td>印刷停止 &gt;0.5 小时需收回重新搅拌</td><td>—</td></tr>
+        <tr><td>搅拌</td><td>搅拌机 3～5 分钟，转速 60%～90%</td><td>—</td></tr>
+      </table>
+      <div class="tips" style="margin-top:10px">回温结束前不可开封，不可用任何方式加速回温。已开封的优先使用，其次是一次回温未开封，最后按内部标签 use before。</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const CFG = {
+  paste: {
+    name: "锡膏",
+    thawH: 4,
+    humid: "30%～60%",
+    openLifeH: 24,
+    roomLimitH: 24,
+    scrapH: 48,
+    notes: [
+      "钢网上回收的锡膏 8 小时内用完，且不能放回冰箱",
+      "印刷完成后 2 小时内完成回流焊",
+      "印刷停止超过 0.5 小时，需收回重新搅拌并清洗钢网",
+      "开封前需搅拌 3～5 分钟（转速 60%～90%）"
+    ]
+  },
+  glue: {
+    name: "胶水",
+    thawH: 4,
+    humid: "30%～65%",
+    openLifeH: 48,
+    roomLimitH: 72,
+    scrapH: 120,
+    notes: [
+      "钢网上的胶水，印刷停止或中断超过 4 小时即报废",
+      "PCB 印刷完成后 4 小时内完成固化",
+      "维修区域使用的胶水须注明开封时间和失效时间",
+      "胶水必须倒立存放"
+    ]
+  }
+};
+
+let curType = "paste";
+let curRound = 1;
+let last = null;
+const KEY = "solderGlue_v2";
+
+function pad(n){ return n < 10 ? "0" + n : "" + n; }
+function fmt(d){
+  return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
+         " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+function toLocalInput(d){
+  return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
+         "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+function durText(ms){
+  const m = Math.round(ms / 60000);
+  if (m < 0) return "已超时";
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+  let s = "";
+  if (d > 0) s += d + " 天 ";
+  if (h > 0) s += h + " 小时 ";
+  if (mm > 0 || s === "") s += mm + " 分钟";
+  return s.trim();
+}
+
+function tick(){ $("nowTime").textContent = fmt(new Date()); }
+setInterval(tick, 1000); tick();
+$("outTime").value = toLocalInput(new Date());
+
+$("typeSeg").querySelectorAll("button").forEach(b => {
+  b.onclick = () => {
+    $("typeSeg").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    curType = b.dataset.type;
+    updateHint();
+    if ($("resultCard").classList.contains("show")) calc();
+  };
+});
+
+$("roundSeg").querySelectorAll("button").forEach(b => {
+  b.onclick = () => {
+    $("roundSeg").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    curRound = +b.dataset.round;
+    updateHint();
+    if ($("resultCard").classList.contains("show")) calc();
+  };
+});
+
+function updateHint(){
+  const c = CFG[curType];
+  const isSecond = curRound === 2;
+  $("outLabel").textContent = isSecond ? "第二次从冰箱取出的时间（开始二次回温）" : "从冰箱取出的时间";
+  $("firstOutField").style.display = isSecond ? "block" : "none";
+  $("thawHint").textContent = (isSecond ? "二次回温 " : "回温 ") + c.thawH +
+    " 小时（25±3℃，湿度 " + c.humid + "），回温结束前不可开封";
+  $("firstOutHint").textContent = "填第一次取出时间，用来算 " + c.scrapH + " 小时报废线；不填就按本次时间算";
+}
+updateHint();
+
+$("toggleRules").onclick = () => {
+  const box = $("rulesBox");
+  const on = box.classList.toggle("show");
+  $("toggleRules").textContent = on ? "收起 ▴" : "展开 ▾";
+};
+
+function calc(){
+  const raw = $("outTime").value;
+  if (!raw) { alert("请先选择取出时间"); return; }
+
+  const c = CFG[curType];
+  const out = new Date(raw);
+  const now = new Date();
+  const isSecond = curRound === 2;
+
+  const firstOutRaw = $("firstOutTime").value;
+  const baseOut = (isSecond && firstOutRaw) ? new Date(firstOutRaw) : out;
+
+  const readyAt = new Date(out.getTime() + c.thawH * 3600 * 1000);
+  const openRaw = $("openTime").value;
+  const openAt = openRaw ? new Date(openRaw) : readyAt;
+  const openDeadline = new Date(openAt.getTime() + c.openLifeH * 3600 * 1000);
+  const roomLimit = new Date(out.getTime() + c.roomLimitH * 3600 * 1000);
+  const scrapAt = new Date(baseOut.getTime() + c.scrapH * 3600 * 1000);
+
+  $("tOut").textContent = fmt(out);
+  $("tReady").textContent = fmt(readyAt);
+  $("tOpen").textContent = fmt(openDeadline);
+  $("tRoom").textContent = fmt(roomLimit);
+  $("tScrap").textContent = fmt(scrapAt);
+
+  $("sOut").textContent = c.name + (isSecond ? " · 第二次使用" : "");
+  $("sReady").textContent = (isSecond ? "二次回温 " : "回温 ") + c.thawH + " 小时 · 25±3℃ / " + c.humid;
+  $("sOpen").textContent = openRaw ? "按实际开封时间 + " + c.openLifeH + " 小时" : "未填开封时间，按回温结束 + " + c.openLifeH + " 小时";
+  $("sRoom").textContent = "未开封室温超过 " + c.roomLimitH + " 小时需二次回温 " + c.thawH + " 小时";
+  $("sScrap").textContent = isSecond && firstOutRaw ? "从第一次取出算 " + c.scrapH + " 小时" : "未开封室温达 " + c.scrapH + " 小时即报废";
+
+  // 管控标签
+  $("lStart").textContent = fmt(out);
+  $("lReady").textContent = fmt(readyAt);
+  $("lOpen").textContent = fmt(openAt);
+  if (isSecond) {
+    $("lEndLabel").textContent = "报废时间";
+    $("lEnd").textContent = fmt(scrapAt);
+    $("lFridgeRow").style.display = "none";
+  } else {
+    $("lEndLabel").textContent = "开封失效时间";
+    $("lEnd").textContent = fmt(openDeadline);
+    $("lFridgeRow").style.display = "flex";
+  }
+
+  const box = $("statusBox");
+  box.className = "status";
+  let big = "", sub = "";
+
+  if (out > now) {
+    box.classList.add("st-bad");
+    big = "取出时间还没到";
+    sub = "请检查输入的时间";
+  } else if (now < readyAt) {
+    box.classList.add("st-wait");
+    big = "还在回温中";
+    sub = "还需 " + durText(readyAt - now) + "，现在不能开盖";
+  } else if (now > scrapAt) {
+    box.classList.add("st-over");
+    big = "已超过报废线";
+    sub = "未开封室温已超 " + c.scrapH + " 小时，应报废";
+  } else if (now > openDeadline) {
+    box.classList.add("st-over");
+    big = "已超过使用时限";
+    sub = "超出 " + durText(now - openDeadline) + "，应报废或按 WI 处理";
+  } else if (now > roomLimit && !openRaw) {
+    box.classList.add("st-wait");
+    big = "未开封超时，需二次回温";
+    sub = "已超 " + c.roomLimitH + " 小时，需二次回温 " + c.thawH + " 小时后再用";
+  } else {
+    box.classList.add("st-ready");
+    big = "可以用了";
+    sub = "开封后剩余 " + durText(openDeadline - now) + "（截止 " + fmt(openDeadline) + "）";
+  }
+
+  $("statusBig").textContent = big;
+  $("statusSub").textContent = sub;
+
+  $("tipsBox").innerHTML = "<b>现场注意：</b><br>• " + c.notes.join("<br>• ");
+  $("resultCard").classList.add("show");
+
+  last = {
+    type: curType,
+    batch: $("batch").value.trim(),
+    round: curRound,
+    out: out.getTime(),
+    ready: readyAt.getTime(),
+    open: openAt.getTime(),
+    deadline: openDeadline.getTime(),
+    scrap: scrapAt.getTime()
+  };
+
+  window.scrollTo({ top: $("resultCard").offsetTop - 70, behavior: "smooth" });
+}
+
+$("calcBtn").onclick = calc;
+
+function loadRecords(){
+  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e){ return []; }
+}
+function saveRecords(list){
+  try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 30))); } catch(e){}
+}
+function renderRecords(){
+  const list = loadRecords();
+  const box = $("records");
+  if (!list.length) { box.innerHTML = '<div class="empty">还没有记录</div>'; return; }
+  box.innerHTML = list.map((r, i) => {
+    const c = CFG[r.type] || CFG.paste;
+    const rn = r.round === 2 ? "第2次" : "第1次";
+    return '<div class="rec-item">' +
+      '<div class="rn">' + (r.batch || (c.name + "（无备注）")) + ' <span class="tag">' + rn + '</span>' +
+        '<div class="rt2">' + c.name + ' ｜ 取出 ' + fmt(new Date(r.out)) +
+        ' ｜ 可用 ' + fmt(new Date(r.ready)) + ' ~ ' + fmt(new Date(r.deadline)) + '</div></div>' +
+      '<div class="del" data-i="' + i + '">×</div></div>';
+  }).join("");
+  box.querySelectorAll(".del").forEach(el => el.onclick = () => {
+    const list = loadRecords();
+    list.splice(+el.dataset.i, 1);
+    saveRecords(list); renderRecords();
+  });
+}
+
+$("saveBtn").onclick = () => {
+  if (!last) return;
+  const list = loadRecords();
+  list.unshift(last);
+  saveRecords(list);
+  renderRecords();
+  $("saveBtn").textContent = "已保存 ✓";
+  setTimeout(() => { $("saveBtn").textContent = "保存这条记录"; }, 1500);
+};
+
+$("clearBtn").onclick = () => {
+  if (!confirm("确定清空所有记录？")) return;
+  saveRecords([]); renderRecords();
+};
+
+renderRecords();
+setInterval(() => { if (last) calc(); }, 60000);
+</script>
+</body>
+</html>
