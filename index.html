@@ -196,9 +196,18 @@
       <div class="row"><span>碳水</span><b><span id="t_carb">0</span> g</b></div>
       <div class="row"><span>膳食纤维</span><b><span id="t_fiber">0</span> g</b></div>
     </div>
+    <button class="btn secondary" id="shareBtn" style="margin-top:12px">📤 生成分享图</button>
     <div class="note">数据参考《中国食物成分表》，为每 100 克可食部的参考值，实际因品种、部位、烹饪方式有浮动。"份"按约 100 克估算。</div>
   </aside>
 </main>
+
+<div class="detail-mask" id="shareMask">
+  <div class="detail" style="text-align:center">
+    <div id="shareImgWrap"></div>
+    <div style="font-size:12px;color:#999;margin-top:10px">长按图片保存到相册，再发微信</div>
+    <button class="close" id="shareClose" style="margin-top:12px">关闭</button>
+  </div>
+</div>
 
 <div class="detail-mask" id="mask">
   <div class="detail">
@@ -438,6 +447,94 @@ photoInput.onchange = e => {
 };
 
 try { renderPhoto(localStorage.getItem(PH_KEY)); } catch (e) { renderPhoto(null); }
+
+
+// ---- 生成分享图 ----
+function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
+}
+function makeShareImage(){
+  if (!plate.length) { alert("先往餐盘里加几样食物再生成"); return; }
+  const W = 720, pad = 44;
+  const rows = plate.length;
+  const H = 250 + rows * 58 + 260;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cv = document.createElement("canvas");
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  // 背景
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  // 顶部渐变条
+  const g = ctx.createLinearGradient(0, 0, W, 150);
+  g.addColorStop(0, "#2e7d5b"); g.addColorStop(1, "#4caf7d");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, 150);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 38px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+  ctx.fillText("今天吃了啥", pad, 68);
+  ctx.font = "22px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+  ctx.globalAlpha = 0.9;
+  ctx.fillText("营养查询 · " + todayStr(), pad, 106);
+  ctx.globalAlpha = 1;
+
+  // 食物列表
+  let y = 210;
+  ctx.fillStyle = "#333";
+  ctx.font = "bold 26px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+  ctx.fillText("本餐食物", pad, y - 30);
+
+  plate.forEach(p => {
+    const f = FOODS[p.idx];
+    ctx.fillStyle = "#222";
+    ctx.font = "26px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+    ctx.fillText(f[0] + (p.qty > 1 ? " ×" + p.qty : ""), pad, y);
+    ctx.fillStyle = "#2e7d5b";
+    ctx.font = "bold 26px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+    const t = (f[3] * p.qty).toFixed(0) + " kcal";
+    ctx.fillText(t, W - pad - ctx.measureText(t).width, y);
+    ctx.strokeStyle = "#eef2f0"; ctx.beginPath();
+    ctx.moveTo(pad, y + 16); ctx.lineTo(W - pad, y + 16); ctx.stroke();
+    y += 58;
+  });
+
+  // 合计
+  const sum = [0, 0, 0, 0, 0];
+  plate.forEach(p => { for (let k = 0; k < 5; k++) sum[k] += FOODS[p.idx][3 + k] * p.qty; });
+
+  y += 20;
+  ctx.fillStyle = "#f6fbf8"; ctx.fillRect(pad, y - 10, W - pad * 2, 170);
+  y += 40;
+  ctx.fillStyle = "#2e7d5b";
+  ctx.font = "bold 30px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+  ctx.fillText("合计 " + sum[0].toFixed(0) + " kcal", pad + 24, y);
+  y += 44;
+  ctx.fillStyle = "#444";
+  ctx.font = "22px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+  ctx.fillText("蛋白质 " + sum[1].toFixed(1) + " g    脂肪 " + sum[2].toFixed(1) + " g    碳水 " + sum[3].toFixed(1) + " g", pad + 24, y);
+  y += 34;
+  ctx.fillText("膳食纤维 " + sum[4].toFixed(1) + " g", pad + 24, y);
+
+  // 底部说明
+  ctx.fillStyle = "#aaa";
+  ctx.font = "18px \"Microsoft YaHei\", \"PingFang SC\", sans-serif";
+  ctx.fillText("数据参考《中国食物成分表》· 每 100 克参考值 · 仅供参考，不构成营养或医疗建议", pad, H - 40);
+
+  return cv.toDataURL("image/png");
+}
+
+$("shareBtn").onclick = () => {
+  let url = null;
+  try { url = makeShareImage(); } catch (err) { alert("生成失败：" + err.message); return; }
+  if (!url) return;
+  $("shareImgWrap").innerHTML = '<img src="' + url + '" style="width:100%;border-radius:10px">';
+  $("shareMask").classList.add("show");
+  $("shareClose").onclick = () => $("shareMask").classList.remove("show");
+  $("shareMask").onclick = e => { if (e.target === $("shareMask")) $("shareMask").classList.remove("show"); };
+};
 
 cats(); render();
 </script>
