@@ -1,6 +1,6 @@
 {
-  "name": "锡膏胶水计算器",
-  "short_name": "锡膏计算",
+  "name": "营养查询",
+  "short_name": "营养查询",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
