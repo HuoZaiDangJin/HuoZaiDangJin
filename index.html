@@ -189,13 +189,7 @@
   <aside id="plate">
     <h2>我的餐盘 <span class="clear" id="clearBtn">清空</span></h2>
     <div id="pitems"><div class="empty" style="padding:18px 0;font-size:13px">还没选食物</div></div>
-    <div class="total" id="total" style="display:none">
-      <div class="row"><span>热量</span><b><span id="t_kcal">0</span> kcal</b></div>
-      <div class="row"><span>蛋白质</span><b><span id="t_pro">0</span> g</b></div>
-      <div class="row"><span>脂肪</span><b><span id="t_fat">0</span> g</b></div>
-      <div class="row"><span>碳水</span><b><span id="t_carb">0</span> g</b></div>
-      <div class="row"><span>膳食纤维</span><b><span id="t_fiber">0</span> g</b></div>
-    </div>
+    <div class="total" id="total" style="display:none"><div id="totalRows"></div></div>
     <button class="btn secondary" id="shareBtn" style="margin-top:12px">📤 生成分享图</button>
     <div class="note">数据参考《中国食物成分表》，为每 100 克可食部的参考值，实际因品种、部位、烹饪方式有浮动。"份"按约 100 克估算。</div>
   </aside>
@@ -365,14 +359,13 @@ function renderPlate() {
   box.innerHTML = plate.map((p,k) => {
     const f = FOODS[p.idx];
     const q = p.qty;
-    const detail = expanded.has(p.idx) ? `<div class="pdetail">
-        <span>蛋白 <b>${(f[4]*q).toFixed(1)}g</b></span>
-        <span>脂肪 <b>${(f[5]*q).toFixed(1)}g</b></span>
-        <span>碳水 <b>${(f[6]*q).toFixed(1)}g</b></span>
-        <span>纤维 <b>${(f[7]*q).toFixed(1)}g</b></span>
-        <span>钙 <b>${(f[8]*q).toFixed(0)}mg</b></span>
-        <span>铁 <b>${(f[9]*q).toFixed(1)}mg</b></span>
-      </div>` : "";
+    const detail = expanded.has(p.idx)
+      ? `<div class="pdetail">` + FIELDS.map((n, k) => {
+          const v = f[3 + k] * q;
+          const num = (k === 0) ? v.toFixed(0) : (v < 10 ? v.toFixed(1) : v.toFixed(0));
+          return `<span>${n} <b>${num}${UNITS[k]}</b></span>`;
+        }).join("") + `</div>`
+      : "";
     return `<div class="pitem">
       <span class="pn" data-x="${p.idx}" title="点名字看营养">${f[0]} <span style="color:#bbb;font-size:11px">${expanded.has(p.idx)?'▾':'▸'}</span></span>
       <span class="pk">${f[3]*q}<span style="font-weight:400;color:#888;font-size:11px"> kcal</span></span>
@@ -393,16 +386,15 @@ function renderPlate() {
   });
   box.querySelectorAll(".del").forEach(b => b.onclick = () => { plate.splice(+b.dataset.d,1); renderPlate(); });
 
-  const sum = [0,0,0,0,0];
+  const sum = new Array(FIELDS.length).fill(0);
   plate.forEach(p => {
     const f = FOODS[p.idx];
-    for (let k=0;k<5;k++) sum[k] += f[3+k] * p.qty;
+    for (let k = 0; k < FIELDS.length; k++) sum[k] += f[3 + k] * p.qty;
   });
-  $("t_kcal").textContent = sum[0].toFixed(0);
-  $("t_pro").textContent = sum[1].toFixed(1);
-  $("t_fat").textContent = sum[2].toFixed(1);
-  $("t_carb").textContent = sum[3].toFixed(1);
-  $("t_fiber").textContent = sum[4].toFixed(1);
+  $("totalRows").innerHTML = FIELDS.map((n, k) => {
+    const num = (k === 0) ? sum[k].toFixed(0) : (sum[k] < 10 ? sum[k].toFixed(1) : sum[k].toFixed(0));
+    return '<div class="row"><span>' + n + '</span><b>' + num + ' ' + UNITS[k] + '</b></div>';
+  }).join("");
   $("total").style.display = "block";
 }
 
