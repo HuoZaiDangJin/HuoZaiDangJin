@@ -63,6 +63,10 @@
   .empty { font-size:13px; color:#aaa; padding:10px 0; text-align:center; }
   .now { font-size:12px; color:#999; text-align:center; margin-bottom:10px; }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2e7d5b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="锡膏胶水计算器">
 </head>
 <body>
 
@@ -434,5 +438,6 @@ $("clearBtn").onclick = () => {
 renderRecords();
 setInterval(() => { if (last) calc(); }, 60000);
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
 </body>
 </html>
